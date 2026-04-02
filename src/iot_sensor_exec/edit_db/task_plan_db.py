@@ -28,9 +28,28 @@ def add_task_plan(data: dict):
             config_data = None
     else:
         config_data = None
+    
+    task_srv_id = data.get("task_id")
+    try:    #v1.1新增task_srv_id查询task_id，防止task_id被删除或禁用后无法查询到task_id
+        if task_srv_id != None:
+            query = iot_task_db.session.query(iot_task_db.Task.id)\
+                .filter(iot_task_db.Task.srv_id == task_srv_id)\
+                .where(iot_task_db.Task.is_delete == 0 and iot_task_db.Task.status == 0)\
+                .first()
+            if query != None:
+                task_id = query.id
+            else:
+                return False, "task_id不存在"
+        else:
+            return False, "task_id不存在"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        iot_task_db.session.close()
+
     plan =iot_task_db.Plan(
             srv_id = data.get("plan_id"),
-            task_id = data.get("task_id"),
+            task_id = task_id,
             plan_name = data.get("plan_name"),
             plan_type = data.get("cycle_execution_unit"),
             execute_time = start_time,

@@ -44,7 +44,7 @@ def get_device_config(device_id:list):
                 pass
         if device_code_dict:
             for key, value in device_code_dict.items():
-                query =iot_device_db.session.query(iot_device_db.Attr.ip, iot_device_db.Attr.port, 
+                query =iot_device_db.session.query(iot_device_db.Attr.id,iot_device_db.Attr.ip, iot_device_db.Attr.port, 
                 iot_device_db.Attr.username, iot_device_db.Attr.password, iot_device_db.Attr.parameter)\
                 .filter(iot_device_db.Attr.device_code == value).first()
                 if query:
@@ -90,6 +90,20 @@ def get_task_plan(device_type_id: list,timeout = 1*60):
     2. progress_status = 0
     3. start_time <= 当前时间 + timeout秒
     4. 关联 iot_device, 过滤设备类型
+    返回结果格式为：
+    True, task_list
+    False, str(e)
+    task_list格式为：
+    [
+        {
+            "id": 1,
+            "task_plan_id": 1,
+            "task_id": 1,
+            "device_id": 1,
+            "start_time": "2026-03-19 10:00:00",
+            "progress_uuid": "1234567890",
+        },
+    ]
     """
     task_list = []
     try:
@@ -116,6 +130,20 @@ def get_task_plan(device_type_id: list,timeout = 1*60):
 def get_task_action(task_id:int):
     """
     根据任务ID获取任务动作
+    
+    返回结果格式为：
+    True, action_list
+    False, str(e)
+    action_list格式为：
+    [
+        {
+            "id": 1,
+            "task_id": 1,
+            "device_id": 1,
+            "device_ability_id": 1,
+            "action_params": "None",
+        },
+    ]
     """
     action_list = []
     try:
@@ -207,24 +235,26 @@ def get_item_definition(device_id:int):
         iot_device_db.session.close()
         iot_data_db.session.close()
 
-def save_task_result(task_result:dict):
+def save_task_result(task_result_list:list):
     """
     保存任务结果
     """
+    result_list = []
     try:
-        result = iot_task_db.Result(
-            task_plan_id=task_result.get("task_plan_id"),
-            task_action_id=task_result.get("task_action_id"),
-            task_progress_id=task_result.get("task_progress_id"),
-            device_id=task_result.get("device_id"),
-            file_path=task_result.get("file_path") or "",
-            item_values=task_result.get("item_values"),
-            parameters=task_result.get("parameters"),
-            error_info=task_result.get("error_info"),
-            post_status=task_result.get("post_status"),
-            create_time=task_result.get("create_time"),
-        )
-        iot_task_db.session.add(result)
+        for task_result in task_result_list:
+            result_list.append({
+                "task_plan_id":task_result.get("task_plan_id"),
+                "task_action_id":task_result.get("task_action_id"),
+                "task_progress_id":task_result.get("task_progress_id"),
+                "device_id":task_result.get("device_id"),
+                "file_path":task_result.get("file_path") or "",
+                "item_values":task_result.get("item_values"),
+                "parameters":task_result.get("parameters"),
+                "error_info":task_result.get("error_info"),
+                "post_status":task_result.get("post_status"),
+                "create_time":task_result.get("create_time"),
+            })
+        iot_task_db.session.bulk_insert_mappings(iot_task_db.Result, result_list)
         iot_task_db.session.commit()
         return True, None
     except Exception as e:
@@ -232,6 +262,19 @@ def save_task_result(task_result:dict):
         return False, str(e)
     finally:
         iot_task_db.session.close()
+def update_device_online(update_list: list):
+    """
+    更新设备在线状态
+    """
+    try:
+        iot_device_db.session.bulk_update_mappings(iot_device_db.Attr, update_list)
+        iot_device_db.session.commit()
+        return True, None
+    except Exception as e:
+        iot_device_db.session.rollback()
+        return False, str(e)
+    finally:
+        iot_device_db.session.close()
 
 def get_device_code_by_int(device_id:int):
     """
@@ -250,20 +293,20 @@ def get_device_code_by_int(device_id:int):
 
 if __name__ == "__main__":
     # flag, result = get_device_id(["温振监控主机", "温振传感器"])
+    flag, result = get_device_config([2,9,11])
     # flag, result = end_timeout_task()
     # flag , result= get_task_plan([12, 13, 14, 15, 16],120*60)
-    flag, result = get_task_action(2)
+    # flag, result = get_task_action(2)
     # print(flag)
     # print(result)
     # host_type, result = get_device_host_type(24)
     # flag, result = update_task_progress(4043, 2)
     # flag, result = get_item_definition(25)
-    save_mes = {'task_plan_id': 2, 'task_action_id': 104, 'task_progress_id': 3987, 
-    'device_id': 29, 'file_path': None, 'item_value': None, 'parameters': None, 'error_info': '执行温振传感器主机任务失败',
-    'post_status': 0, 'create_time': '2026-03-12 16:17:01',
-    'item_values': None}
+
     # flag, result = save_task_result(save_mes)
     # flag, result = get_device_code_by_int(24)
+    # flag, result = update_device_online([{"id": 68, "parameter": {"signal": 2, "group_id": 5, "battery_percentage": 100}, "online_status": 1, "create_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")},
+    # {"id": 69, "parameter": {"signal": 2, "group_id": 6, "battery_percentage": 100}, "online_status": 1, "create_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}])
     print(flag)
     print(result)
  

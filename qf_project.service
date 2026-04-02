@@ -1,0 +1,24 @@
+[Unit]
+Description=QF Project IoT Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=cfqf
+WorkingDirectory=/home/cfqf/qf_project
+
+ExecStart=/bin/bash /home/cfqf/qf_project/service_start.bash
+
+ExecStop=/bin/kill -s TERM $MAINPID
+KillMode=mixed
+TimeoutStopSec=15
+
+Restart=on-failure
+RestartSec=5s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=qf_project
+
+[Install]
+WantedBy=multi-user.target

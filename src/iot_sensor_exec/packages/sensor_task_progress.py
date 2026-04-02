@@ -5,6 +5,7 @@ import yaml,pymysql
 import sys
 import os, queue, time, threading
 import uuid
+from datetime import datetime
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from iot_sensor_exec.edit_db import task_progress_db
@@ -12,6 +13,10 @@ from log_record.log_record import LogAndRecord
 with open('data/configuration/log_path.yaml', 'r', encoding='utf-8') as f:
     log_config = yaml.safe_load(f)
 log_path = log_config['log']['sensor_task_progress']
+with open('data/configuration/iot_device.yaml', 'r', encoding='utf-8') as f:
+    iot_device_config = yaml.safe_load(f)
+sensor_device_type_id = iot_device_config['device_type_id']['wenzhen_id']
+camera_device_type_id = iot_device_config['device_type_id']['camera_id']
 
 """
     根据iot数据库的task_progress表, 查询未推送的任务进度, 并推送至端侧
@@ -23,7 +28,8 @@ class SensorTaskProgress:
         if not self.log_init:
             raise Exception("日志初始化失败")
         self.logger = self.log_init.logger
-        self.recv_mes = queue.Queue()
+        self.sensor_recv_mes = queue.Queue()
+        self.camera_recv_mes = queue.Queue()
         self._stop_event = threading.Event()
         threading.Thread(target=self.schedule_task, daemon=True).start()
 
@@ -40,9 +46,17 @@ class SensorTaskProgress:
             self.exec()
             self._stop_event.wait(timeout=5)
     
+    @staticmethod
+    def _fmt_dt(val):
+        """将 datetime 对象转为秒级时间戳，非 datetime 原样返回"""
+        if isinstance(val, datetime):
+            return str(int(val.timestamp()))
+        return val
+
     def exec(self):
         """
         执行任务进度推送任务
+        v1.1 补全任务进度数据,包括任务计划ID、任务进度、任务开始时间、任务结束时间、任务状态、设备编码、任务进度UUID
         """
         flag, result = task_progress_db.query_unpost_progress()
         if flag:
@@ -50,28 +64,47 @@ class SensorTaskProgress:
                 flag, mes = task_progress_db.update_progress_post_status(result)
                 if flag:
                     for mes in result:
-                        self.recv_mes.put({
-                            "func_value": "iot_push_task_progress",
-                            "device_code": mes.get("device_code"),
-                            "message_id": str(uuid.uuid4()),
-                            "error_info": None,
-                            "data": {
-                                "task_progress_uuid": mes.get("progress_uuid"),
-                                "task_progress_status": mes.get("status"),
-                            },
-                        })
+                        device_type_id = mes.get("device_type_id")
+                        if device_type_id in sensor_device_type_id:
+                            self.sensor_recv_mes.put({
+                                "func_value": "iot_push_task_progress",
+                                "device_code": mes.get("device_code"),
+                                "message_id": str(uuid.uuid4()),
+                                "error_info": None,
+                                "data": {
+                                    "task_progress_uuid": mes.get("progress_uuid"),
+                                    "task_plan_id": mes.get("task_plan_srv_id"),
+                                    "task_id": mes.get("task_srv_id"),
+                                    "progress_percent": mes.get("progress"),
+                                    "task_progress_status": mes.get("status"),
+                                    "start_time": self._fmt_dt(mes.get("start_time")),
+                                    "end_time": self._fmt_dt(mes.get("end_time")),
+                                },
+                            })
+                        elif device_type_id in camera_device_type_id:
+                            self.camera_recv_mes.put({
+                                "func_value": "iot_push_task_progress",
+                                "device_code": mes.get("device_code"),
+                                "message_id": str(uuid.uuid4()),
+                                "error_info": None,
+                                "data": {
+                                    "task_progress_uuid": mes.get("progress_uuid"),
+                                    "task_plan_id": mes.get("task_plan_srv_id"),
+                                    "task_id": mes.get("task_srv_id"),
+                                    "progress_percent": mes.get("progress"),
+                                    "task_progress_status": mes.get("status"),
+                                    "start_time": self._fmt_dt(mes.get("start_time")),
+                                    "end_time": self._fmt_dt(mes.get("end_time")),
+                                },
+                            })
+                        else:
+                            pass
                     self.logger.info(f"任务进度推送成功: {result}")
                 else:
                     self.logger.error(f"任务进度推送失败: {mes}")
 
-                save_flag, save_result = task_progress_db.get_progress_by_uuid(mes.get("progress_uuid"))
-                if save_flag:
-                    self._save_progress(save_result)
-                else:
-                    self.logger.error(f"任务进度查询失败: {save_result}")
         else:
             self.logger.error(f"任务进度查询失败: {result}")
-        return self.recv_mes
 
     def _save_progress(self, progress: dict):
         """

@@ -1,5 +1,17 @@
 sensor_wb:
   host: 192.168.1.173
   port: 18083
-  path: "/websocket/service"
-  auth_token: "c018d6f8b5734adf86175db19a4be534"
+  path: /websocket/service
+  auth_token: c018d6f8b5734adf86175db19a4be534
+
+nvr_wb:
+  host: 192.168.1.173
+  port: 18083
+  path: /websocket/service
+  auth_token: 84f536c1bbee4a07974179cbaecf7bb7
+
+drone_wb:
+  host: 192.168.1.173
+  port: 18083
+  path: /websocket/service
+  auth_token: c52d05884ebc42309c25b0dff9fb615b

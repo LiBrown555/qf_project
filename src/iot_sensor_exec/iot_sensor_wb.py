@@ -16,7 +16,7 @@ import yaml
 import signal
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
-from iot_sensor_exec.packages import sensor_task_plan, device_check, sensor_task_progress
+from iot_sensor_exec.packages import sensor_task_plan, device_check, sensor_task_progress, sensor_task_post
 
 with open('data/configuration/log_path.yaml', 'r', encoding='utf-8') as f:
     log_config = yaml.safe_load(f)
@@ -29,7 +29,7 @@ log_path = log_config['log']['iot_sensor_wb']
 class WebSocketConfig:
     scheme: str = "ws"                  # ws / wss
     reconnect_delay: float = 5.0        # 断线重连间隔（秒）
-    max_reconnect_attempts: int = 5     # 0 = 无限重连
+    max_reconnect_attempts: int = 0     # 0 = 无限重连
     ping_interval: Optional[float] = 20.0
     ping_timeout: Optional[float] = 10.0
     extra_headers: dict = field(default_factory=dict)
@@ -68,7 +68,7 @@ class IoTSensorClient:
         self.sensor_task_plan = sensor_task_plan.SensorTaskPlan()
         self.device_check = device_check.DeviceCheck()
         self.sensor_task_progress = sensor_task_progress.SensorTaskProgress()
-
+        self.sensor_task_post = sensor_task_post.SensorTaskPost()
     # ── 消息处理（可按需重写） ──────────────────
     def on_message(self, raw: str) -> None:
         """收到服务端消息时触发"""

@@ -38,7 +38,7 @@ def get_device_message(device_name:list):
                         parent_mes = result._asdict().copy()
 
                         attr_query =iot_device_db.session.query(iot_device_db.Attr.ip,iot_device_db.Attr.port,iot_device_db.Attr.username,
-                        iot_device_db.Attr.password,iot_device_db.Attr.parameter)\
+                        iot_device_db.Attr.password,iot_device_db.Attr.parameter,iot_device_db.Attr.online_status)\
                         .filter(iot_device_db.Attr.device_code == parent_mes["device_code"]).first()
                         if attr_query:
                             parent_mes["ip"] = attr_query.ip
@@ -46,12 +46,14 @@ def get_device_message(device_name:list):
                             parent_mes["username"] = attr_query.username
                             parent_mes["password"] = attr_query.password
                             parent_mes["parameter"] = attr_query.parameter
+                            parent_mes["online_status"] = attr_query.online_status
                         else:
                             parent_mes["ip"] = None
                             parent_mes["port"] = None
                             parent_mes["username"] = None
                             parent_mes["password"] = None
                             parent_mes["parameter"] = {"group_id": None}
+                            parent_mes["online_status"] = 0
 
                         child_device_query =iot_device_db.session.query(iot_device_db.Device.id,iot_device_db.Device.device_name, iot_device_db.Device.device_type_id,
                         iot_device_db.Device.parent_device_id,iot_device_db.Device.device_code)\
@@ -61,7 +63,7 @@ def get_device_message(device_name:list):
                             for child_result in child_device_query:
                                 child_item = child_result._asdict().copy()
                                 child_query =iot_device_db.session.query(iot_device_db.Attr.ip,iot_device_db.Attr.port,iot_device_db.Attr.username,
-                                iot_device_db.Attr.password,iot_device_db.Attr.parameter)\
+                                iot_device_db.Attr.password,iot_device_db.Attr.parameter,iot_device_db.Attr.online_status)\
                                 .filter(iot_device_db.Attr.device_code == child_item["device_code"]).first()
                                 if child_query:
                                     child_item["ip"] = child_query.ip
@@ -69,13 +71,14 @@ def get_device_message(device_name:list):
                                     child_item["username"] = child_query.username
                                     child_item["password"] = child_query.password
                                     child_item["parameter"] = child_query.parameter
+                                    child_item["online_status"] = child_query.online_status
                                 else:
                                     child_item["ip"] = None
                                     child_item["port"] = None
                                     child_item["username"] = None
                                     child_item["password"] = None
                                     child_item["parameter"] = None
-
+                                    child_item["online_status"] = 0
                                 child_mes.append(child_item)
                             parent_mes["child_mes"] = child_mes
                         else:#绑定子设备不存在
@@ -94,5 +97,5 @@ def get_device_message(device_name:list):
         iot_device_db.session.close()
 
 if __name__ == "__main__":
-    result_mes = get_device_message(["温振监控主机", "局放监控主机", "声纹传感器"])
+    result_mes = get_device_message(["温振监控主机", "局放监控主机", "声纹传感器", "硬盘录像机"])
     print(result_mes)

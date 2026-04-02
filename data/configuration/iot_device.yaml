@@ -1,22 +1,34 @@
-temperature_device:
-  host_device: 温振监控主机
-  child_device: 温振传感器
-
+#数据推送信息
 device_status_post:
-  url: http://192.168.10.201:8000/robot_push_capture_data
-  device_post_time: 120 # 设备状态推送时间间隔，单位：秒
-  device_name:
+  sensor_url: http://192.168.1.173:18083/upload/iotPushSensorData
+  camera_url: http://192.168.1.173:18083/upload/iotPushCaptureData
+  device_post_time: 600 # 设备状态推送时间间隔，单位：秒
+  device_name: # 设备大类名称列表，用于设备状态推送
     - 温振监控主机
     - 局放监控主机
     - 声纹传感器
+    - 硬盘录像机
 
-#根据iot_device_type表设备类别用做任务计划筛选对应的设备任务计划
+#根据iot_device_type表设备类别用做任务计划筛选对应的设备任务计划, 根据设备类别获取设备配置
 device_type:
   局放监控主机: 12
   温振监控主机: 13
+  硬盘录像机: 2
+  球机: 9
+  微距相机: 11
   局放传感器: 14
   温振传感器: 15
   声纹传感器: 16
+
+#任务进度推送类别
+device_type_id:
+  wenzhen_id:
+    - 13
+    - 15
+  camera_id:
+    - 2
+    - 9
+    - 11
 
 
 

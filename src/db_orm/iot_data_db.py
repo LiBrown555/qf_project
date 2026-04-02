@@ -29,7 +29,6 @@ engine = create_engine(
     max_overflow=db_config['db']['max_overflow'],
     # 链接池大小
     pool_size=db_config['db']['pool_size'],
-    # 链接池中没有可用链接则最多等待的秒数，超过该秒数后报错
     pool_timeout=db_config['db']['pool_timeout'],
     # 多久之后对链接池中的链接进行一次回收
     pool_recycle=db_config['db']['pool_recycle'],
@@ -44,6 +43,7 @@ session = scoped_session(Session)
 class ItemDefinition(Base):
     __tablename__ = 'iot_data_item_definition'
     id = Column(Integer, primary_key=True, autoincrement=True, comment="主键")
+    srv_id = Column(Integer, nullable=True, comment="平台ID")
     device_type_id = Column(Integer, nullable=False)
     item_code = Column(String(255), nullable=False, comment="如 temp, humi, gas_ch4, gas_co, etc")
     item_name = Column(String(255), nullable=False, comment="可读名：温度 / 湿度 / 甲烷 / 一氧化碳")
@@ -53,11 +53,12 @@ class ItemDefinition(Base):
     create_time = Column(DateTime, nullable=False, comment="创建时间")
 
     def __repr__(self):
-        return f"ItemDefinition(id={self.id}, device_type_id={self.device_type_id}, item_code={self.item_code}, item_name={self.item_name}, unit={self.unit}, data_type={self.data_type}, sort_order={self.sort_order}, create_time={self.create_time})"
+        return f"ItemDefinition(id={self.id}, srv_id={self.srv_id}, device_type_id={self.device_type_id}, item_code={self.item_code}, item_name={self.item_name}, unit={self.unit}, data_type={self.data_type}, sort_order={self.sort_order}, create_time={self.create_time})"
 
     def to_dict(self):
         return {
             "id": self.id,
+            "srv_id": self.srv_id,
             "device_type_id": self.device_type_id,
             "item_code": self.item_code,
             "item_name": self.item_name,

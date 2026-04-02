@@ -213,7 +213,6 @@ class TaskPlan:
                     if not flag:
                         self.logger.error(f"更新任务计划状态失败,错误信息: {update_err}")
                     else:
-                        self.logger.info(f"更新任务计划状态成功")
                         # update_task_plan 成功后这些计划的 progress_generate 已变为非 0，
                         updated_ids = {d.get("id") for d in add_result}
                         self.temp_plan_list = [p for p in self.temp_plan_list if p.get("id") not in updated_ids]

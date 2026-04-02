@@ -7,24 +7,36 @@ from db_orm import iot_task_db, iot_device_db
 
 def query_unpost_progress()->list:
     """
+    v1.1补全任务进度数据,包括任务计划ID、任务进度、任务开始时间、任务结束时间、任务状态、设备编码、任务进度UUID
     查询未推送的任务进度,
     返回数据格式:
-    [{'id': 4041, 'device_code': '8393423428', 'progress_uuid': 'c96eeee4-6633-46c0-98eb-e4fe0c12490d'},
-     {'id': 4042, 'device_code': '8393423428', 'progress_uuid': '711ce61b-2502-4953-84c6-8e6fb36996e0'},
-      {'id': 4043, 'device_code': '8393423428', 'progress_uuid': '61841498-1558-407e-97b4-5c0f6b672c55'}]
+    [{'id': 4041, 'task_srv_id': 1, 'task_plan_srv_id': 1, 'device_type_id': 1, 'progress': 50, 'start_time': '2026-03-27 10:00:00', 'end_time': '2026-03-27 10:00:00', 'status': 0, 'device_code': '8393423428', 'progress_uuid': 'c96eeee4-6633-46c0-98eb-e4fe0c12490d'},
+     {'id': 4042, 'task_srv_id': 1, 'task_plan_srv_id': 1, 'device_type_id': 1, 'progress': 50, 'start_time': '2026-03-27 10:00:00', 'end_time': '2026-03-27 10:00:00', 'status': 0, 'device_code': '8393423428', 'progress_uuid': '711ce61b-2502-4953-84c6-8e6fb36996e0'},
+      {'id': 4043, 'task_srv_id': 1, 'task_plan_srv_id': 1, 'device_type_id': 1, 'progress': 50, 'start_time': '2026-03-27 10:00:00', 'end_time': '2026-03-27 10:00:00', 'status': 0
     """
     result_list = []
     try:
-        query = iot_task_db.session.query(iot_task_db.Progress.id, iot_task_db.Progress.device_id, iot_task_db.Progress.status, iot_task_db.Progress.progress_uuid)\
+        query = iot_task_db.session.query(iot_task_db.Progress.id, iot_task_db.Task.srv_id.label('task_srv_id'),
+        iot_task_db.Plan.srv_id.label('task_plan_srv_id'), iot_task_db.Progress.device_id,
+        iot_task_db.Progress.progress,iot_task_db.Progress.start_time,iot_task_db.Progress.end_time,
+        iot_task_db.Progress.status, iot_task_db.Progress.progress_uuid)\
+        .join(iot_task_db.Plan, iot_task_db.Plan.id == iot_task_db.Progress.task_plan_id)\
+        .join(iot_task_db.Task, iot_task_db.Task.id == iot_task_db.Progress.task_id)\
         .filter(iot_task_db.Progress.failure_reason == "un_post").all()
         if query:
             for result in query:
                 device_id = result.device_id
-                device_query = iot_device_db.session.query(iot_device_db.Device.id, iot_device_db.Device.device_code)\
+                device_query = iot_device_db.session.query(iot_device_db.Device.id, iot_device_db.Device.device_type_id,iot_device_db.Device.device_code)\
                 .filter(iot_device_db.Device.id == device_id).first()
                 if device_query:
                     result_list.append({
                         "id": result.id,
+                        "task_srv_id": result.task_srv_id,
+                        "task_plan_srv_id": result.task_plan_srv_id,
+                        "device_type_id": device_query.device_type_id,
+                        "progress": result.progress,
+                        "start_time": result.start_time,
+                        "end_time": result.end_time,
                         "status": result.status,
                         "device_code": device_query.device_code,
                         "progress_uuid": result.progress_uuid
@@ -84,8 +96,8 @@ def get_progress_by_uuid(uuid: str):
 
 
 if __name__ == "__main__":
-    # flag, result = query_unpost_progress()
-    flag, result = get_progress_by_uuid("ff398873-0a15-4692-96e7-f0e082a46fee")
+    flag, result = query_unpost_progress()
+    # flag, result = get_progress_by_uuid("ff398873-0a15-4692-96e7-f0e082a46fee")
     print(flag)
     print(result)
     # flag, result = update_progress_post_status(result)

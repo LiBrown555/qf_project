@@ -6,3 +6,4 @@ log:
   device_check: logs/iot_sensor_exec/device_check/device_check.log
   sensor_task_progress: logs/iot_sensor_exec/sensor_task_progress/sensor_task_progress.log
   uav_task_plan: logs/uav_task_exec/uav_task_plan/uav_task_plan.log
+  sensor_task_post: logs/iot_sensor_exec/sensor_task_post/sensor_task_post.log

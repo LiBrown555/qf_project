@@ -1,10 +1,10 @@
 db:
-  # username: root
-  # passwd: 123456
-  # ip: 120.26.22.61
-  # port: 15698
-  # name: iot                 #传感器数据库名称
-  # uav_name: uav             #无人机数据库名称
+  username: root
+  passwd: 123456
+  ip: 192.168.1.69
+  port: 3306
+  name: iot                 #传感器数据库名称
+  uav_name: uav             #无人机数据库名称
   
   max_overflow: 5           # 链接池大小
   pool_size: 10             # 链接池中没有可用链接则最多等待的秒数，超过该秒数后报错
@@ -12,9 +12,9 @@ db:
   pool_recycle: 3600        # 使用前检测连接是否存活，防止使用已被服务端关闭的连接
   pool_pre_ping: True       # 使用前检测连接是否存活，防止使用已被服务端关闭的连接
   
-  username: root
-  passwd: 123456
-  ip: localhost
-  port: 3306
-  name: iot
-  uav_name: uav
+  # username: root
+  # passwd: 123456
+  # ip: localhost
+  # port: 3306
+  # name: iot
+  # uav_name: uav
